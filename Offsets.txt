@@ -1,0 +1,26 @@
+Every address is in hex
+Every address start offset is from server.dll Base offset
+
+Game Data
+Player[] offset:	?
+Sizeof(Player): 	?
+Player.HP:		+230
+Player.X:		+1dc
+Player.Y:		+1e0
+Player.Z:		+1e4
+Gun_Object[] offset: 	?
+Sizeof(Gun_Object): 	?
+Gun_Object.clip:	+950?
+Gun_Object.clip:	+958?
+Graphical_Elements[]:	?
+Sizeof(Graphical_Elements): 	?
+
+
+Function offsets
+mp_buy_allow_guns:	?
+endround:		?
+Player deaths:		?
+
+
+
+Maybe a way to display text from console: https://steamcommunity.com/sharedfiles/filedetails/?id=697255469
