@@ -1,22 +1,32 @@
 Every address is in hex
 Every address start offset is from server.dll Base offset
+{i,j,k} is notation for pointer chain
 
 Game Data
-Player[] offset:	?
-Sizeof(Player): 	?
-Player.HP:		+230
-Player.X:		+1dc
-Player.Y:		+1e0
-Player.Z:		+1e4
-Gun_Object[] offset: 	?
-Sizeof(Gun_Object): 	?
-Gun_Object.clip:	+950?
-Gun_Object.clip:	+958?
+
+Player[] offset:	0x00A49EC8
+Sizeof(Player): 	4 bytes
+Player.HP:		{24,C0,230}
+Player.X:		{24,C0,1dc}
+Player.Y:		{24,C0,1e0}
+Player.Z:		{24,C0,1e4}
+
+Example, set Player 5's, x coordiant =
+{"server.dll" + 0x00A49EC8, 4*5, 24, C0, 1dc}
+
+Gun_Object[] offset: 	0x00AAEBFC
+Sizeof(Gun_Object): 	16 bytes	(probably stores gun type and owner in the other bytes?)
+Gun_Object.clip:	{54,950}
+Gun_Object.reserve:	{54,958}
+
 Graphical_Elements[]:	?
 Sizeof(Graphical_Elements): 	?
 
+CT_Player_Count:	{"server.dll"+0x00121ED4,1C0,D6C}
+T_Player_Count:		{"server.dll"+0x00121ED4,1C0,D70}
 
 Function offsets
+
 mp_buy_allow_guns:	?
 endround:		?
 Player deaths:		?
