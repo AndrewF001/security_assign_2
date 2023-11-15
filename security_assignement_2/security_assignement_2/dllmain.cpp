@@ -1,5 +1,18 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
+#include "pointer_map.h"
+#include <iostream>
+#include <Windows.h>
+
+void fake_main() {
+    const HMODULE server_dll_base_addr = GetModuleHandle(L"server.dll");
+    
+    if (server_dll_base_addr == nullptr) {
+        throw "failed to find a loaded server.dll";
+    }
+    
+    // Our game-mode here
+}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -9,6 +22,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
+        //TODO: look into starting a non-blocking thread a more modern way
+        CloseHandle(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)fake_main, hModule, 0, nullptr));
+        break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
