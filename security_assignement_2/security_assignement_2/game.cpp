@@ -76,7 +76,7 @@ void Game::every_bullet_counts(std::string cmd) {
         int new_gun_count = 0; //TODO: fetch gun count
         if (new_gun_count != server_gun_count) {
             for (size_t i = server_gun_count; i < new_gun_count; i++) {
-                *gun_ammo_clip(server_dll_base_addr, iM) = 4;
+                *gun_ammo_clip(server_dll_base_addr, i) = 4;
                 *gun_ammo_reserve(server_dll_base_addr, i) = 0;
             }
             server_gun_count = new_gun_count;
