@@ -29,13 +29,6 @@ void Game::start() {
     }
 }
 
-int setHealth(int player, int health)
-{
-    //player_health(server_dll_base_addr, player) = health;
-    //server_dll_base_addr needs to be passed in some reason
-    return 0;
-}
-
 void Game::every_bullet_counts(std::string cmd) {
 
 
@@ -83,7 +76,7 @@ void Game::every_bullet_counts(std::string cmd) {
         int new_gun_count = 0; //TODO: fetch gun count
         if (new_gun_count != server_gun_count) {
             for (size_t i = server_gun_count; i < new_gun_count; i++) {
-                *gun_ammo_clip(server_dll_base_addr, i) = 4;
+                *gun_ammo_clip(server_dll_base_addr, iM) = 4;
                 *gun_ammo_reserve(server_dll_base_addr, i) = 0;
             }
             server_gun_count = new_gun_count;
@@ -121,7 +114,6 @@ void Game::every_bullet_counts(std::string cmd) {
             for (size_t i = 0; i < player_deaths.size(); i++) {
                 if (player_deaths[i].distance_from(pos) <= 150) {  // TODO: Get approate distance for hammar units
                     // TODO: += 4 bullets to this player gun somehow???
-                    *gun_ammo_clip(server_dll_base_addr, i) += 4;
 
                     player_deaths.erase(player_deaths.begin() + (i - 1));
                     i--;
