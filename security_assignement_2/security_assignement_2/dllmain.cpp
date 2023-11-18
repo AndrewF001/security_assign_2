@@ -4,27 +4,30 @@
 #include <iostream>
 #include <Windows.h>
 #include "game.h"
+#include <psapi.h>
 
 void fake_main(LPVOID hModule_ptr) {
-    // Required for Cleanup
+    // Required for sending agrument to thread
     HMODULE hModule = *static_cast<HMODULE*>(hModule_ptr);
     delete hModule_ptr;
 
-    // Only works if we know base address for the server
-    const HMODULE server_dll_base_addr = GetModuleHandle(L"server.dll");
-    if (server_dll_base_addr == nullptr) {
+    // Get server.dll base address
+    const HMODULE server_dll = GetModuleHandleW(L"server.dll");
+    if (server_dll == nullptr) {
         throw "failed to find a loaded server.dll";
     }
-    
-    // open console
+
+    // open a console
     AllocConsole();
     FILE* pFile;
     freopen_s(&pFile, "CONOUT$", "w", stdout);
     freopen_s(&pFile, "CONIN$", "r", stdin);
     std::cout << "DLL attached\n";
 
+    std::cout << "server.dll base address: " << server_dll <<"\n";
+
     // starts our game logic code
-    Game game_obj = Game(hModule);
+    Game game_obj = Game(server_dll);
     game_obj.start();
 
     // Clean up console

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "game.h"
 #include <iostream>
+#include "pointer_map.h"
 
 void Game::start() {
     std::string input;
@@ -43,8 +44,8 @@ void Game::every_bullet_counts(std::string cmd) {
         int new_gun_count = 0; //TODO: fetch gun count
         if (new_gun_count != server_gun_count) {
             for (size_t i = server_gun_count; i < new_gun_count; i++) {
-                //TODO: set clip ammo to 4
-                //TODO: set reserver ammo to 0
+                *gun_ammo_clip(server_dll_base_addr, i) = 4;
+                *gun_ammo_reserve(server_dll_base_addr, i) = 0;
             }
             server_gun_count = new_gun_count;
         }
@@ -58,17 +59,18 @@ void Game::every_bullet_counts(std::string cmd) {
         server_player_count = 0; // TODO: Fetch new player count
         alive_status.reserve(server_player_count);
         for (size_t i = 0; i < server_player_count; i++) {
-            int player_hp = 0;      // TODO: get player health
-            Position pos{ 1,2,3 };  // TODO: Get player location
+            // player[i] stats
+            int* player_hp = player_health(server_dll_base_addr, i);
+            Position pos = player_pos(server_dll_base_addr, i);
             
             // Player has respawned
-            if (player_hp > 1) {
+            if (*player_hp > 1) {
                 alive_status[i] = true;
-                // Set health to 1
+                *player_hp = 1; // Set their health to 1
             }
 
-            // Player is dead died
-            if (player_hp < 1) {
+            // Player is dead
+            if (*player_hp <= 0) {
                 if (alive_status[i] == true) {
                     player_deaths.push_back(pos);
                     alive_status[i] = false;
@@ -88,6 +90,6 @@ void Game::every_bullet_counts(std::string cmd) {
 
         }
 
-        break; //TODO: added for testing, remove later
+        break; //TODO: added for testing so it's not an infinite loop, remove later
     }
 }
