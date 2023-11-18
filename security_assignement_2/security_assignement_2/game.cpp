@@ -56,7 +56,7 @@ void Game::every_bullet_counts(std::string cmd) {
         }
 
         // Setting player values
-        server_player_count = *get_server_player_count(server_dll_base_addr);
+        server_player_count = get_server_player_count(server_dll_base_addr);
         alive_status.reserve(server_player_count);
         for (size_t i = 0; i < server_player_count; i++) {
             // player[i] stats

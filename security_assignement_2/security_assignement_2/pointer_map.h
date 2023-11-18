@@ -46,6 +46,16 @@ inline int* gun_ammo_reserve(HMODULE base_addr, unsigned int index) {
 	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 16, 0x54, 0x958});
 };
 
-inline int* get_server_player_count(HMODULE base_addr) {
-	return (int*)pointer_map(base_addr, { 0x00B606FC, 0x7c, 0x20, 0x18, 0x488});
+inline int get_server_player_count(HMODULE base_addr) {
+	return *(int*)pointer_map(base_addr, { 0x00B606FC, 0x7c, 0x20, 0x18, 0x488});
+}
+
+// This is always used for current amount of guns but not always accurate for game-modes like deathmatch
+inline int get_active_gun_count(HMODULE base_addr) {
+	return *(int*)pointer_map(base_addr, { 0x0044F2C4, 0x910});
+}
+
+// Total gun count is used for round based game modes as you can carry guns between rounds
+inline int get_total_gun_count(HMODULE base_addr) {
+	return *(int*)pointer_map(base_addr, { 0x0044D200, 0x33C});
 }
