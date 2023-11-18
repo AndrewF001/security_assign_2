@@ -34,7 +34,7 @@ inline int* player_health(HMODULE base_addr, unsigned int index) {
 
 
 inline Position player_pos(HMODULE base_addr, unsigned int index) {
-	float* x = (float*)pointer_map(base_addr, { 0x00A49EC8, index * 4, 0x24, 0xc0, 0x1dc });
+	float* x = (float*)pointer_map(base_addr, { 0x00A49EC8, index * 4, 0x24, 0xc0, 0x1dc});
 	return Position{ *x, *(x + 1), *(x + 2) };
 };
 
@@ -46,3 +46,6 @@ inline int* gun_ammo_reserve(HMODULE base_addr, unsigned int index) {
 	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 16, 0x54, 0x958});
 };
 
+inline int* get_server_player_count(HMODULE base_addr) {
+	return (int*)pointer_map(base_addr, { 0x00B606FC, 0x7c, 0x20, 0x18, 0x488});
+}
