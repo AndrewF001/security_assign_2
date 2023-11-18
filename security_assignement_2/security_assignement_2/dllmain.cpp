@@ -24,7 +24,8 @@ void fake_main(LPVOID hModule_ptr) {
     std::cout << "DLL attached\n";
 
     // starts our game logic code
-    game::start();
+    Game game_obj = Game(hModule);
+    game_obj.start();
 
     // Clean up console
     std::cout << "Hack exiting\n";
