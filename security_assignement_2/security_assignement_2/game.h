@@ -35,7 +35,7 @@ class Game {
 public:
 	HMODULE server_dll_base_addr;
 	int server_player_count = 0;
-	int server_gun_count = 0;
+	int server_gun_array_size = 0;
 	std::vector<DeathLoc> player_deaths = {};
 
 	Game(HMODULE addr) : server_dll_base_addr(addr) {};

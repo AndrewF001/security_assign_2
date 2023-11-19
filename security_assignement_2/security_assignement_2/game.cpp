@@ -32,7 +32,7 @@ void Game::start() {
 void Game::every_bullet_counts(std::string cmd) {
     // Initalization
     server_player_count = 0;
-    server_gun_count = 0;
+    server_gun_array_size = 0;
     player_deaths = {};
     std::vector<bool> alive_status = {};
 
@@ -40,27 +40,41 @@ void Game::every_bullet_counts(std::string cmd) {
 
     //TODO: Add our win condition 
     while (true) {
-        // Setting weapon values
-        int new_gun_count = 0; //TODO: fetch gun count
-        if (new_gun_count != server_gun_count) {
-            for (size_t i = server_gun_count; i < new_gun_count; i++) {
-                *gun_ammo_clip(server_dll_base_addr, i) = 4;
-                *gun_ammo_reserve(server_dll_base_addr, i) = 0;
-            }
-            server_gun_count = new_gun_count;
-        }
+        server_gun_array_size = get_gun_array_size(server_dll_base_addr);
+        server_player_count = get_server_player_count(server_dll_base_addr);
+        alive_status.resize(server_player_count);
 
+
+        // Setting weapon values
+        int count = 0;
+        while (count < server_gun_array_size - 2) { //! No clue why -2 is necessary, but do not fucking delete it!
+            auto gun_ptr = gun_ammo_clip(server_dll_base_addr, count);
+            count++;
+            // Non-weapon item/despawned
+            if (gun_ptr == nullptr || *gun_ptr < 0)
+                continue;
+
+
+            if (*gun_ptr > 4) {
+                *gun_ptr = 4;   // new weapon
+            }
+            if (*(gun_ptr + 2) != 0) {
+                *(gun_ptr + 2) = 0; // new weapon
+            }
+        }
+        
         // Remove outdated player deaths
         while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
             player_deaths.erase(player_deaths.begin());
         }
 
         // Setting player values
-        server_player_count = get_server_player_count(server_dll_base_addr);
-        alive_status.reserve(server_player_count);
         for (size_t i = 0; i < server_player_count; i++) {
             // player[i] stats
-            int* player_hp = player_health(server_dll_base_addr, i);
+            auto player_hp = player_health(server_dll_base_addr, i);
+            if (player_hp == nullptr) { // Player left the game 
+                continue;
+            }
             Position pos = player_pos(server_dll_base_addr, i);
             
             // Player has respawned
