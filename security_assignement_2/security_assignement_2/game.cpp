@@ -31,16 +31,46 @@ void Game::start() {
     }
 }
 
-//BROKEN! When we're writting values it sometimes crashes
 void Game::every_bullet_counts(std::string cmd) {
+
+
     // Initalization
     player_deaths = {};
     std::vector<bool> alive_status = {};
+    std::vector<int> player_points = {};
 
     //TODO: a way to start the server either, 'mp_restart 1' or https://www.reddit.com/r/GlobalOffensive/comments/23gy12/console_commands_to_start_a_map_in_a_deathmatch/
-
-    //TODO: Add our win condition 
+    
+    //TODO: Add our win condition
     while (true) {
+      
+       //win condition
+        int alive_status_count = 0;
+        for (int i = 0; i < alive_status.size(); i++)
+        {
+            if (alive_status[i] = true)
+            {
+                alive_status_count++;
+            }
+        }
+        if (alive_status_count == 1)
+        {
+            //wow a player won
+            for (int i = 0; i < alive_status.size(); i++)
+            {
+                if (alive_status[i] = true)
+                {
+                    player_points[i] += 1
+                    std::cout << "player " << i << "won YIPPEE!!!!\n";
+                    //thing to restart the game
+                }
+            }
+        }
+        else if (alive_status_count == 0)
+        {
+            std::cout << "somehow every player died but the game needs to restart anyway";
+            // thing to restart the game
+            
         // Reduces lag, crash likely-hood, and it's an acceptable timeframe
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         
@@ -115,6 +145,7 @@ void Game::every_bullet_counts(std::string cmd) {
             /*for (size_t i = 0; i < player_deaths.size(); i++) {
                 if (player_deaths[i].distance_from(pos) <= 150) {  // TODO: Get approate distance for hammar units
                     // TODO: += 4 bullets to this player gun somehow???
+
                     player_deaths.erase(player_deaths.begin() + (i - 1));
                     i--;
                     continue;
