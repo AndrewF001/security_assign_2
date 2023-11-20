@@ -29,6 +29,26 @@ void Game::start() {
     }
 }
 
+void restartGame()
+{
+    std::cout << "mp_freezetime 0\n";
+    std::cout << "mp_maxrounds 999\n";
+    std::cout << "mp_respawn_immunitytime 0\n";
+    std::cout << "mp_restartgame 1\n";
+    std::cout << "sv_cheats 1\n";
+    std::cout << "bot_dont_shoot 1\n";
+    std::cout << "mp_limitteams 0\n";
+    std::cout << "mp_autoteambalance 0\n";
+    std::cout << "mp_round_restart_delay 0\n";
+    std::cout << "sv_infinite_ammo 1\n";
+    std::cout << "give weapon_ak47 \n";
+    std::cout << "bot_add_t\n";
+
+
+    
+
+}
+
 void Game::every_bullet_counts(std::string cmd) {
 
 
@@ -37,9 +57,10 @@ void Game::every_bullet_counts(std::string cmd) {
     server_gun_count = 0;
     player_deaths = {};
     std::vector<bool> alive_status = {};
+    std::vector<int> player_points = {};
 
     //TODO: a way to start the server either, 'mp_restart 1' or https://www.reddit.com/r/GlobalOffensive/comments/23gy12/console_commands_to_start_a_map_in_a_deathmatch/
-
+    
     //TODO: Add our win condition
     while (true) {
 
@@ -59,7 +80,7 @@ void Game::every_bullet_counts(std::string cmd) {
             {
                 if (alive_status[i] = true)
                 {
-
+                    player_points[i] += 1
                     std::cout << "player " << i << "won YIPPEE!!!!\n";
                     //thing to restart the game
                 }
