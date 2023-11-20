@@ -2,6 +2,8 @@
 #include "game.h"
 #include <iostream>
 #include "pointer_map.h"
+#include <thread>
+#include <chrono>
 
 void Game::start() {
     std::string input;
@@ -29,32 +31,10 @@ void Game::start() {
     }
 }
 
-void restartGame()
-{
-    std::cout << "mp_freezetime 0\n";
-    std::cout << "mp_maxrounds 999\n";
-    std::cout << "mp_respawn_immunitytime 0\n";
-    std::cout << "mp_restartgame 1\n";
-    std::cout << "sv_cheats 1\n";
-    std::cout << "bot_dont_shoot 1\n";
-    std::cout << "mp_limitteams 0\n";
-    std::cout << "mp_autoteambalance 0\n";
-    std::cout << "mp_round_restart_delay 0\n";
-    std::cout << "sv_infinite_ammo 1\n";
-    std::cout << "give weapon_ak47 \n";
-    std::cout << "bot_add_t\n";
-
-
-    
-
-}
-
 void Game::every_bullet_counts(std::string cmd) {
 
 
     // Initalization
-    server_player_count = 0;
-    server_gun_count = 0;
     player_deaths = {};
     std::vector<bool> alive_status = {};
     std::vector<int> player_points = {};
@@ -63,8 +43,8 @@ void Game::every_bullet_counts(std::string cmd) {
     
     //TODO: Add our win condition
     while (true) {
-
-        //win condition
+      
+       //win condition
         int alive_status_count = 0;
         for (int i = 0; i < alive_status.size(); i++)
         {
@@ -91,48 +71,78 @@ void Game::every_bullet_counts(std::string cmd) {
             std::cout << "somehow every player died but the game needs to restart anyway";
             // thing to restart the game
             
+        // Reduces lag, crash likely-hood, and it's an acceptable timeframe
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        
+        // Check Command interupt flag
+        if (sigflag != 0) {
+            break;
         }
 
         // Setting weapon values
-        int new_gun_count = 0; //TODO: fetch gun count
-        if (new_gun_count != server_gun_count) {
-            for (size_t i = server_gun_count; i < new_gun_count; i++) {
-                *gun_ammo_clip(server_dll_base_addr, i) = 4;
-                *gun_ammo_reserve(server_dll_base_addr, i) = 0;
-            }
-            server_gun_count = new_gun_count;
-        }
+        int count = 0;
+        while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not fucking delete it!
+            auto gun_ptr = gun_ammo_clip(server_dll_base_addr, count);
+            count++;
+            // Non-weapon item/despawned
+            if (gun_ptr == nullptr)
+                continue;
+            if (*gun_ptr < 0)
+                continue;
 
-        // Remove outdated player deaths
-        while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
-            player_deaths.erase(player_deaths.begin());
+            if (*gun_ptr > 4) { // gun clip ammo
+                *gun_ptr = 4;   // new weapon
+            }
+            if (*(gun_ptr + 2) != 0) { // gun reserver ammo
+                *(gun_ptr + 2) = 0; // new weapon
+            }
         }
+        
+        //! We're never adding to list as listed below, so pointless
+        // Remove outdated player deaths
+        /*while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
+            player_deaths.erase(player_deaths.begin());
+        }*/
+
+        auto player_count = get_server_player_count(server_dll_base_addr);  
+        alive_status.resize(player_count);
 
         // Setting player values
-        server_player_count = 0; // TODO: Fetch new player count
-        alive_status.reserve(server_player_count);
-        for (size_t i = 0; i < server_player_count; i++) {
+        for (size_t i = 0; i < player_count; i++) { //!Broken we want players alive not player connected, as player[] auto srinks when player dies
             // player[i] stats
-            int* player_hp = player_health(server_dll_base_addr, i);
-            Position pos = player_pos(server_dll_base_addr, i);
+            auto player_hp = player_health(server_dll_base_addr, i);
+            if (player_hp == nullptr) {
+                continue;
+            }
             
-            // Player has respawned
-            if (*player_hp > 1) {
-                alive_status[i] = true;
-                *player_hp = 1; // Set their health to 1
+            //*get_player_money(server_dll_base_addr, i) = 0;
+            //BROKEN! Causes crashes when the game is writing to memory simultantionally
+            auto money_ptr = get_player_money(server_dll_base_addr, i);
+            if (money_ptr != nullptr) {
+                if (*money_ptr != 0) {
+                    *money_ptr = 0;
+                }
             }
 
-            // Player is dead
+            //BROKEN! When player dies they are removed from the player list
+            /*Position pos = player_pos(server_dll_base_addr, i);
             if (*player_hp <= 0) {
                 if (alive_status[i] == true) {
                     player_deaths.push_back(pos);
                     alive_status[i] = false;
                 }
                 continue;
+            }*/
+
+            // Player has respawned
+            if (*player_hp > 1) {
+                alive_status[i] = true;
+                *player_hp = 1; // Set their health to 1
             }
 
+            //BROKEN! We have no idea when a player dies as they're removed from the player list
             // Working out if a player is over a dead body that hasn't been looted
-            for (size_t i = 0; i < player_deaths.size(); i++) {
+            /*for (size_t i = 0; i < player_deaths.size(); i++) {
                 if (player_deaths[i].distance_from(pos) <= 150) {  // TODO: Get approate distance for hammar units
                     // TODO: += 4 bullets to this player gun somehow???
 
@@ -140,10 +150,11 @@ void Game::every_bullet_counts(std::string cmd) {
                     i--;
                     continue;
                 }
-            }
-
+            }*/
         }
 
-        break; //TODO: added for testing so it's not an infinite loop, remove later
+        //break;
     }
+    sigflag = 0;
+    std::cout << "Play function finished";
 }

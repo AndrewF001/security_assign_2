@@ -3,6 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <math.h>
+#include <csignal>
 
 struct Position {
 	float x, y, z;
@@ -31,14 +32,20 @@ public:
 	};
 };
 
+// Adds console interupt
+inline sig_atomic_t sigflag = 0;
+inline void sighandler(int s) { sigflag = 1; }
+
 class Game {
 public:
 	HMODULE server_dll_base_addr;
-	int server_player_count = 0;
-	int server_gun_count = 0;
+	//int server_player_count = 0;
+	//int server_gun_array_size = 0;
 	std::vector<DeathLoc> player_deaths = {};
 
-	Game(HMODULE addr) : server_dll_base_addr(addr) {};
+	Game(HMODULE addr) : server_dll_base_addr(addr) {
+		std::signal(SIGINT, sighandler);	// Assigns console interupt (Doesn't always work :/ )
+	};
 	void start();
 	void every_bullet_counts(std::string cmd);
 };

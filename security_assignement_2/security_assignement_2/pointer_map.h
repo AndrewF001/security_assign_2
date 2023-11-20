@@ -2,6 +2,39 @@
 #include <vector>
 #include <iostream>
 #include "game.h"
+#include <Windows.h>
+
+//! we might need to check for read/write permission
+/*
+class PointerMap {
+private:
+	HANDLE hProcess;
+public:
+	PointerMap() {
+		HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, GetCurrentProcessId());
+		if (hProcess == NULL) {
+			throw "Failed to open process handle. Error code: " + GetLastError();
+		}
+	}
+
+	inline bool valid_addr(uintptr_t ptr) {
+		LPVOID targetAddress = reinterpret_cast<LPVOID>(ptr);  // Change this to your desired address
+
+		// Check the read permission
+		MEMORY_BASIC_INFORMATION memInfo;
+		if (VirtualQueryEx(hProcess, targetAddress, &memInfo, sizeof(memInfo)) == 0) {
+			throw "VirtualQueryEx failed. Error code: " + GetLastError();
+			CloseHandle(hProcess);
+			return 1;
+		}
+
+		return (memInfo.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE));
+	}
+}	
+*/
+
+
+
 
 inline void* pointer_map(void* base_addr, std::vector<unsigned int> offset) {
 	// Has to have at least a base address
@@ -20,7 +53,7 @@ inline void* pointer_map(void* base_addr, std::vector<unsigned int> offset) {
 	for (size_t i = 0; i < offset.size() - 1; i++) {
 		if (itr_ptr == (uintptr_t)NULL)
 			return nullptr;
-
+			
 		itr_ptr = *(uintptr_t*)(itr_ptr + offset[i]);
 	}
 
@@ -29,20 +62,56 @@ inline void* pointer_map(void* base_addr, std::vector<unsigned int> offset) {
 };
 
 inline int* player_health(HMODULE base_addr, unsigned int index) {
-	return (int*)pointer_map(base_addr, { 0x00A49EC8, index * 4, 0x24, 0xc0, 0x230});
+	return (int*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x230 });
 };
 
-
 inline Position player_pos(HMODULE base_addr, unsigned int index) {
-	float* x = (float*)pointer_map(base_addr, { 0x00A49EC8, index * 4, 0x24, 0xc0, 0x1dc });
-	return Position{ *x, *(x + 1), *(x + 2) };
+	auto ptr = (float*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x1dc });
+
+	if (ptr == nullptr)
+		return Position{ 0,0,0 };
+
+	return Position{ *ptr, *(ptr + 1), *(ptr + 2) };
+};
+
+inline int* get_player_money(HMODULE base_addr, unsigned int index) {
+	return (int*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x2DA4 });
 };
 
 inline int* gun_ammo_clip(HMODULE base_addr, unsigned int index) {
-	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 16, 0x54, 0x950});
+	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 0x8, 0x964 });
 };
 
 inline int* gun_ammo_reserve(HMODULE base_addr, unsigned int index) {
-	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 16, 0x54, 0x958});
+	return (int*)pointer_map(base_addr, { 0x00AAEBFC, index * 0x8, 0x96c });
 };
 
+inline int get_server_player_count(HMODULE base_addr) {
+	auto ptr = (int*)pointer_map(base_addr, { 0x00B606FC, 0x7c, 0x20, 0x18, 0x488 });
+
+	if (ptr == nullptr)
+		return 0;
+
+	return *(int*)ptr;
+}
+
+
+inline int get_gun_array_size(HMODULE base_addr) {
+	auto ptr = (int*)pointer_map(base_addr, { 0xAAFE40 });
+
+	if (ptr == nullptr)
+		return 0;
+
+	return *ptr;
+}
+
+/* Pointer map doesn't work after restart :/	- WHY!
+inline int get_alive_player_count(HMODULE base_addr) {
+	auto ptr = (int*)pointer_map(base_addr, { 0x000C7234, 0x168, 0xA10, 0xE94});
+
+	if (ptr == nullptr)
+		return 0;
+
+	return (*ptr) + (*ptr+1);
+}
+*/
