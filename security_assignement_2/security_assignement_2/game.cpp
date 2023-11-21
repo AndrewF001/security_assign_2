@@ -4,6 +4,7 @@
 #include "pointer_map.h"
 #include <thread>
 #include <chrono>
+#include<cstring>
 
 void Game::start() {
     std::string input;
@@ -33,17 +34,17 @@ void Game::start() {
 
 //BROKEN! When we're writting values it sometimes crashes
 void Game::every_bullet_counts(std::string cmd) {
+    std::cout << "Starting Game\n";
     // Initalization
     player_deaths = {};
-    std::vector<bool> alive_status = {};
-
+    player_list = {};
+    server_player_count = get_server_player_count(server_dll_base_addr);
     //TODO: a way to start the server either, 'mp_restart 1' or https://www.reddit.com/r/GlobalOffensive/comments/23gy12/console_commands_to_start_a_map_in_a_deathmatch/
 
-    //TODO: Add our win condition 
-    while (true) {
+    while (server_player_count != 0) {
         // Reduces lag, crash likely-hood, and it's an acceptable timeframe
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        
+
         // Check Command interupt flag
         if (sigflag != 0) {
             break;
@@ -67,63 +68,89 @@ void Game::every_bullet_counts(std::string cmd) {
                 *(gun_ptr + 2) = 0; // new weapon
             }
         }
-        
+
         //! We're never adding to list as listed below, so pointless
         // Remove outdated player deaths
-        /*while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
+        while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
             player_deaths.erase(player_deaths.begin());
-        }*/
-
-        auto player_count = get_server_player_count(server_dll_base_addr);  
-        alive_status.resize(player_count);
-
-        // Setting player values
-        for (size_t i = 0; i < player_count; i++) { //!Broken we want players alive not player connected, as player[] auto srinks when player dies
-            // player[i] stats
-            auto player_hp = player_health(server_dll_base_addr, i);
-            if (player_hp == nullptr) {
-                continue;
-            }
-            
-            //*get_player_money(server_dll_base_addr, i) = 0;
-            //BROKEN! Causes crashes when the game is writing to memory simultantionally
-            auto money_ptr = get_player_money(server_dll_base_addr, i);
-            if (money_ptr != nullptr) {
-                if (*money_ptr != 0) {
-                    *money_ptr = 0;
-                }
-            }
-
-            //BROKEN! When player dies they are removed from the player list
-            /*Position pos = player_pos(server_dll_base_addr, i);
-            if (*player_hp <= 0) {
-                if (alive_status[i] == true) {
-                    player_deaths.push_back(pos);
-                    alive_status[i] = false;
-                }
-                continue;
-            }*/
-
-            // Player has respawned
-            if (*player_hp > 1) {
-                alive_status[i] = true;
-                *player_hp = 1; // Set their health to 1
-            }
-
-            //BROKEN! We have no idea when a player dies as they're removed from the player list
-            // Working out if a player is over a dead body that hasn't been looted
-            /*for (size_t i = 0; i < player_deaths.size(); i++) {
-                if (player_deaths[i].distance_from(pos) <= 150) {  // TODO: Get approate distance for hammar units
-                    // TODO: += 4 bullets to this player gun somehow???
-                    player_deaths.erase(player_deaths.begin() + (i - 1));
-                    i--;
-                    continue;
-                }
-            }*/
         }
 
-        //break;
+        // new alive array
+        player_list = get_new_player_list();
+
+        // Setting player values
+        for (size_t i = 0; i < player_list.size(); i++) {
+
+            *player_list[i].money = 0;
+
+            if (*player_list[i].hp <= 0) {
+                //player_deaths.push_back(our_alive_list[i].pos);    // !Work out how to not double add and when they've respawned, probably a extend DeathLoc?
+                std::cout << "player dead\n";
+                continue;
+            }
+
+            // Player has respawned
+            if (*player_list[i].hp > 1) {
+                *player_list[i].hp = 1; // Set their health to 1
+            }
+
+            // Working out if a player is over a dead body that hasn't been looted
+            for (size_t j = 0; j < player_deaths.size(); j++) {
+                if (player_deaths[j].distance_from(player_list[i].pos) <= 150) {
+                    std::cout << "player in range" << std::endl;
+
+                    //BROKEN! Work out how to assign only player[i] gets a bullet
+                    int count = 0;
+                    while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not fucking delete it!
+                        auto gun_ptr = gun_ammo_clip(server_dll_base_addr, count);
+                        count++;
+
+                        if (gun_ptr == nullptr)
+                            continue;
+                        if (*gun_ptr < 0)
+                            continue;
+                        std::cout << "bullets added" << std::endl;
+                        *gun_ptr = 4;
+                    }
+
+                    player_deaths.erase(player_deaths.begin() + (j - 1));
+                    j--;
+                    continue;
+                }
+            }
+        }
     }
     sigflag = 0;
-    std::cout << "Play function finished";
+    std::cout << "Game Mode Finished!\n";
+}
+
+
+std::vector<OurPlayer> Game::get_new_player_list() {
+
+    auto player_count = get_server_player_count(server_dll_base_addr);
+    if (player_count == 0) {
+        server_player_count = 0;
+        return {};
+    }
+
+    if (player_count > server_player_count) {
+        server_player_count = player_count;
+    }
+
+    int* buffer = new int[server_player_count + 1];
+    std::vector<OurPlayer> out;
+    out.reserve(server_player_count);
+
+    memcpy(buffer, (void*)((uintptr_t)server_dll_base_addr + 0x00A49EC8), server_player_count * 4);
+    
+    for (size_t i = 0; i < server_player_count; i++) {
+        auto ptr = ((uintptr_t)*buffer) + (i * 4);
+        if (ptr == (uintptr_t)NULL)
+            continue;
+
+        // TODO: change offsets to pointer base instead of server.dll base
+        out.push_back({ ptr, player_pos(server_dll_base_addr,i),player_health(server_dll_base_addr,i), get_player_money(server_dll_base_addr,i) });
+    }
+
+    return out;
 }

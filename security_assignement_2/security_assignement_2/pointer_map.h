@@ -30,7 +30,7 @@ public:
 
 		return (memInfo.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE));
 	}
-}	
+}
 */
 
 
@@ -53,7 +53,7 @@ inline void* pointer_map(void* base_addr, std::vector<unsigned int> offset) {
 	for (size_t i = 0; i < offset.size() - 1; i++) {
 		if (itr_ptr == (uintptr_t)NULL)
 			return nullptr;
-			
+
 		itr_ptr = *(uintptr_t*)(itr_ptr + offset[i]);
 	}
 
@@ -103,6 +103,10 @@ inline int get_gun_array_size(HMODULE base_addr) {
 		return 0;
 
 	return *ptr;
+}
+
+inline uintptr_t get_player_ptr(HMODULE base_addr, unsigned int index) {
+	return (uintptr_t)pointer_map(base_addr, { 0x00A49EC8, index * 0x4 });
 }
 
 /* Pointer map doesn't work after restart :/	- WHY!
