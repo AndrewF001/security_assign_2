@@ -41,8 +41,9 @@ public:
 	Position pos;
 	int* hp;
 	int* money;
+	int is_dead = 0;
 
-	OurPlayer(uintptr_t p, Position p2, int* h, int* m) : ptr(p), pos(p2), hp(h), money(m) {};
+	OurPlayer(uintptr_t p, Position p2, int* h, int* m, int d) : ptr(p), pos(p2), hp(h), money(m), is_dead(d) {};
 };
 
 // Adds console interupt
@@ -56,6 +57,7 @@ public:
 	//int server_gun_array_size = 0;
 	std::vector<DeathLoc> player_deaths = {};
 	std::vector<OurPlayer> player_list = {};
+	std::vector<OurPlayer> alive_status = {};
 
 	Game(HMODULE addr) : server_dll_base_addr(addr) {
 		std::signal(SIGINT, sighandler);	// Assigns console interupt (Doesn't always work :/ )

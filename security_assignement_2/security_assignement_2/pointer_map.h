@@ -61,12 +61,13 @@ inline void* pointer_map(void* base_addr, std::vector<unsigned int> offset) {
 	return (void*)itr_ptr;
 };
 
-inline int* player_health(HMODULE base_addr, unsigned int index) {
-	return (int*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x230 });
+inline int* player_health_offset(uintptr_t base_addr) {
+	return (int*)pointer_map((void*)base_addr, { 0, 0x230 });
 };
 
-inline Position player_pos(HMODULE base_addr, unsigned int index) {
-	auto ptr = (float*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x1dc });
+
+inline Position player_pos_offset(uintptr_t base_addr) {
+	auto ptr = (float*)pointer_map((void*)base_addr, { 0, 0x1dc });
 
 	if (ptr == nullptr)
 		return Position{ 0,0,0 };
@@ -74,8 +75,8 @@ inline Position player_pos(HMODULE base_addr, unsigned int index) {
 	return Position{ *ptr, *(ptr + 1), *(ptr + 2) };
 };
 
-inline int* get_player_money(HMODULE base_addr, unsigned int index) {
-	return (int*)pointer_map(base_addr, { 0x00A49EC8, index * 0x4, 0x2DA4 });
+inline int* get_player_money_offset(uintptr_t base_addr) {
+	return (int*)pointer_map((void*)base_addr, { 0, 0x2DA4 });
 };
 
 inline int* gun_ammo_clip(HMODULE base_addr, unsigned int index) {

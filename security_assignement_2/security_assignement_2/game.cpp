@@ -38,9 +38,10 @@ void Game::every_bullet_counts(std::string cmd) {
     // Initalization
     player_deaths = {};
     player_list = {};
+    alive_status = {};
     server_player_count = get_server_player_count(server_dll_base_addr);
     //TODO: a way to start the server either, 'mp_restart 1' or https://www.reddit.com/r/GlobalOffensive/comments/23gy12/console_commands_to_start_a_map_in_a_deathmatch/
-
+    alive_status = get_new_player_list();
     while (server_player_count != 0) {
         // Reduces lag, crash likely-hood, and it's an acceptable timeframe
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -52,7 +53,7 @@ void Game::every_bullet_counts(std::string cmd) {
 
         // Setting weapon values
         int count = 0;
-        while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not fucking delete it!
+        while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not delete it!
             auto gun_ptr = gun_ammo_clip(server_dll_base_addr, count);
             count++;
             // Non-weapon item/despawned
@@ -83,15 +84,18 @@ void Game::every_bullet_counts(std::string cmd) {
 
             *player_list[i].money = 0;
 
-            if (*player_list[i].hp <= 0) {
-                //player_deaths.push_back(our_alive_list[i].pos);    // !Work out how to not double add and when they've respawned, probably a extend DeathLoc?
-                std::cout << "player dead\n";
+            if (*player_list[i].hp <= 0 && alive_status[i].is_dead == 0) {
+                alive_status[i].is_dead = 1;
+                std::cout << "player is dead\n";
                 continue;
             }
+
+           
 
             // Player has respawned
             if (*player_list[i].hp > 1) {
                 *player_list[i].hp = 1; // Set their health to 1
+                alive_status[i].is_dead = 0;
             }
 
             // Working out if a player is over a dead body that hasn't been looted
@@ -101,7 +105,7 @@ void Game::every_bullet_counts(std::string cmd) {
 
                     //BROKEN! Work out how to assign only player[i] gets a bullet
                     int count = 0;
-                    while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not fucking delete it!
+                    while (count < get_gun_array_size(server_dll_base_addr) - 2) { //! No clue why -2 is necessary, but do not delete it!
                         auto gun_ptr = gun_ammo_clip(server_dll_base_addr, count);
                         count++;
 
@@ -148,8 +152,7 @@ std::vector<OurPlayer> Game::get_new_player_list() {
         if (ptr == (uintptr_t)NULL)
             continue;
 
-        // TODO: change offsets to pointer base instead of server.dll base
-        out.push_back({ ptr, player_pos(server_dll_base_addr,i),player_health(server_dll_base_addr,i), get_player_money(server_dll_base_addr,i) });
+        out.push_back({ ptr, player_pos_offset(ptr),player_health_offset(ptr), get_player_money_offset(ptr), 0 });
     }
 
     return out;
