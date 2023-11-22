@@ -70,7 +70,6 @@ void Game::every_bullet_counts(std::string cmd) {
             }
         }
 
-        //! We're never adding to list as listed below, so pointless
         // Remove outdated player deaths
         while (player_deaths.size() != 0 && player_deaths.front().time_from() >= std::chrono::seconds(30)) {
             player_deaths.erase(player_deaths.begin());
@@ -84,9 +83,11 @@ void Game::every_bullet_counts(std::string cmd) {
 
             *player_list[i].money = 0;
 
-            if (*player_list[i].hp <= 0 && alive_status[i].is_dead == 0) {
-                alive_status[i].is_dead = 1;
-                std::cout << "player is dead\n";
+            if (*player_list[i].hp <= 0) {
+                if (alive_status[i].is_dead == 0) {
+                    alive_status[i].is_dead = 1;
+                    player_deaths.push_back(player_list[i].pos);
+                }
                 continue;
             }
 
@@ -99,9 +100,8 @@ void Game::every_bullet_counts(std::string cmd) {
             }
 
             // Working out if a player is over a dead body that hasn't been looted
-            for (size_t j = 0; j < player_deaths.size(); j++) {
+            for (int j = 0; j < player_deaths.size(); j++) {
                 if (player_deaths[j].distance_from(player_list[i].pos) <= 150) {
-                    std::cout << "player in range" << std::endl;
 
                     //BROKEN! Work out how to assign only player[i] gets a bullet
                     int count = 0;
@@ -113,11 +113,10 @@ void Game::every_bullet_counts(std::string cmd) {
                             continue;
                         if (*gun_ptr < 0)
                             continue;
-                        std::cout << "bullets added" << std::endl;
                         *gun_ptr = 4;
                     }
 
-                    player_deaths.erase(player_deaths.begin() + (j - 1));
+                    player_deaths.erase(player_deaths.begin() + j);
                     j--;
                     continue;
                 }
