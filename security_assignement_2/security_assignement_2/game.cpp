@@ -8,6 +8,9 @@
 
 void Game::start() {
     std::string input;
+    std::future<void> play_thread;  // Future for play thread
+    std::future<void> easy_mode_thread;  // Future for easy mode thread
+
     while (true) {
         std::cout << "\nEnter command(help): ";
         std::cin >> input;
@@ -15,20 +18,43 @@ void Game::start() {
         if (input == "exit")
             break;
 
-        // Only care if it starts with play 
-        if (input.rfind("play", 0) == 0) {
-            every_bullet_counts(input);
+        if (input == "play") {
+            if (play_thread.valid()) {
+                std::cout << "Play mode is already running.\n";
+            }
+            else {
+                play_thread = std::async(std::launch::async, &Game::every_bullet_counts, this, input);
+            }
+            continue;
+        }
+
+        if (input == "easymode") {
+            if (easy_mode_thread.valid()) {
+                std::cout << "Easy mode is already running.\n";
+            }
+            else {
+                easy_mode_thread = std::async(std::launch::async, &Game::easy_mode, this);
+            }
             continue;
         }
 
         if (input == "help") {
             std::cout << "exit - exits the hack\n";
             std::cout << "play - starts the hack\n";
+            std::cout << "easy mode - starts the easy mode hack\n";
             std::cout << "help - hello\n";
             continue;
         }
 
-        std::cout << "Not a accepted command, type help\n";
+        std::cout << "Not an accepted command, type help\n";
+    }
+
+    if (play_thread.valid()) {
+        play_thread.wait(); // Wait for play mode thread to finish if it's running
+    }
+
+    if (easy_mode_thread.valid()) {
+        easy_mode_thread.wait(); // Wait for easy mode thread to finish if it's running
     }
 }
 
@@ -127,6 +153,54 @@ void Game::every_bullet_counts(std::string cmd) {
     std::cout << "Game Mode Finished!\n";
 }
 
+
+void Game::easy_mode() {
+    // Implement the easy mode functionality here
+    std::cout << "Easy mode started\n";
+    // ... easy mode logic ...
+
+    DWORD moduleBase = (DWORD)GetModuleHandle("client.dll");
+
+
+    while (!GetAsyncKeyState(VK_END))
+    {
+        DWORD LocalPlayer = *(DWORD*)(moduleBase + 0xDEF97C); //dwLocalPlayer
+        DWORD GlowObjectManager = *(DWORD*)(moduleBase + 0x535FCB8); // dwGlowObjectManager
+        DWORD EntityList = *(DWORD*)(moduleBase + 0x4E051DC); //dwEntityList
+        int localTeam = *(int*)(LocalPlayer + 0xF4); //iTeamNunber
+        for (int i = 1; i < 64; i++)
+        {
+            DWORD entity = *(DWORD*)((moduleBase + 0x4E051DC) + i * 0x10); //0x10 size of each entity
+            if (entity == NULL) continue;
+
+            int glowIndex = *(int*)(entity + 0x10488); //glowIndex
+            int entityTeam = *(int*)(entity + 0xF4); //iTeam_num
+            if (entityTeam == localTeam)
+            {
+                //Local Team
+
+                //each rgb is 4 bytes shifted from eachother
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x8)) = 0.f; //R
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0xc)) = 1.f; //G
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x10)) = 0.f; //B
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x14)) = 1.7f; //A
+
+            }
+            else {
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x8)) = 1.f; //R
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0xc)) = 0.f; //G
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x10)) = 0.f; //B
+                *(float*)((GlowObjectManager + glowIndex * 0x38 + 0x14)) = 1.7f; //A
+
+            }
+            *(bool*)((GlowObjectManager + glowIndex * 0x38 + 0x24)) = true;
+            *(bool*)((GlowObjectManager + glowIndex * 0x38 + 0x25)) = false;
+
+        }
+    }
+    std::cout << "Easy mode finished\n";
+
+}
 
 std::vector<OurPlayer> Game::get_new_player_list() {
 
