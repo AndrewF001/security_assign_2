@@ -65,5 +65,7 @@ public:
 	void start();
 	void every_bullet_counts(std::string cmd);
 	std::vector<OurPlayer> get_new_player_list();
+	void easy_mode();
+
 };
 
