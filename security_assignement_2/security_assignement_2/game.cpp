@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include<cstring>
+#include <future>
 
 void Game::start() {
     std::string input;
@@ -159,7 +160,7 @@ void Game::easy_mode() {
     std::cout << "Easy mode started\n";
     // ... easy mode logic ...
 
-    DWORD moduleBase = (DWORD)GetModuleHandle("client.dll");
+     DWORD moduleBase = (DWORD)GetModuleHandle(L"client.dll");
 
 
     while (!GetAsyncKeyState(VK_END))
